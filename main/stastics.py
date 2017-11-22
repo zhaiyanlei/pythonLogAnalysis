@@ -5,26 +5,23 @@ Created on 2017年11月21日
 @author: zhaiyl
 '''
 
-import logging
+import logging.config
 import db.MysqlDB as db
 from file.getFile import getFilename
 from datetime import datetime
 
-logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s#%(filename)s[line:%(lineno)d]#%(levelname)s#%(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S',
-                filename='../stastics.log',
-                filemode='w')
-logger = logging.getLogger(__name__)
+#加载日志配置
+logging.config.fileConfig("conf/log.conf")
+logger = logging.getLogger("stastics")
 
 #统计开始
 def stastics():
     now = datetime.now()
     maxTime = timeformat(now)
     lasttime = db.getLastTime();
-    logging.info(lasttime)
+    logger.info(lasttime)
     filename = getFilename(lasttime)
-    logging.info(filename)
+    logger.info(filename)
     try:
         fo = open(filename)
         #逐行读取日志,判断时间是否满足
@@ -34,7 +31,7 @@ def stastics():
             if cmp(time, maxTime) <= 0:
                 handleLine(param)
     except IOError :
-        logging.info('file not found:%s', filename)
+        logger.info('file not found:%s', filename)
 
 #解析每一行日志
 def handleLine(param):

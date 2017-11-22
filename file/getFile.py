@@ -14,9 +14,9 @@ def getFilename(lasttime):
     start = lasttime
     startStr = start.strftime('%Y-%m-%d');
     if (nowStr != startStr):
-        filename = conf.filepath + "." + startStr
+        filename = conf.filepath + conf.filename + "." + startStr
     else:
-        filename = conf.filepath
+        filename = conf.filepath + conf.filename
     return filename
 
 #获取早先文件
