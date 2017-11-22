@@ -25,8 +25,8 @@ def updateLastTime(lasttime):
     cf = get_cf()
     conn = getConn(cf)
     cur = conn.cursor();
-    cur.execute('update time_control set time=' + lasttime
-                 + ' where server=' + str(conf.server))
+    cur.execute("update time_control set time='" + lasttime
+                 + "' where server=" + str(conf.server))
     cur.close()
     conn.commit()
     conn.close()
