@@ -4,6 +4,7 @@ Created on 2017年11月21日
 
 @author: zhaiyl
 '''
+
 import MySQLdb
 import conf.conf as conf
 import ConfigParser
@@ -33,16 +34,26 @@ def updateLastTime(lasttime):
     conn.commit()
     conn.close()
 
-
+#保存统计信息
 def saveStastics(ads):
-    sql = "insert into ad_stastics(apk_channel_id, game_id, type, source, subsource,\
+    sql = "insert into ad_statistic(apk_channel_id, game_id, type, server, source, subsource,\
      visit, finish, click, ipload, ipfinish, ipclick, collect_datetime, load_time) \
-     values('%s','%s','%s', '%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"
+     values('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')"
     cf = get_cf()
     conn = getConn(cf)
     cur = conn.cursor();
-    cur.execute(sql % (ads.id, ads.gameId, ads.type, ads.source, ads.subsource, ads.load, \
+    cur.execute(sql % (ads.id, ads.gameId, ads.type, str(conf.server), ads.source, ads.subsource, ads.load, \
                 ads.finish, ads.click, len(ads.ipLoad), len(ads.ipfinish), len(ads.ipclick), ads.collect_datetime, ads.load_time))
+    cur.close()
+    conn.commit()
+    conn.close()
+    
+def truncate():
+    sql = "truncate table ad_statistic"
+    cf = get_cf()
+    conn = getConn(cf)
+    cur = conn.cursor();
+    cur.execute(sql)
     cur.close()
     conn.commit()
     conn.close()

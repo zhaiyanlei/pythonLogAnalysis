@@ -10,25 +10,26 @@ import db.MysqlDB as db
 from file.getFile import getFilename
 import datetime
 import os
-from db.adStastics import ADStastics
+from db.adStatistic import ADStatistics
 
 # 加载日志配置
 logging.config.fileConfig("conf/log.conf")
 logger = logging.getLogger("stastics")
 
-load_dictionary = {}
-finish_dictionary = {}
-click_dictionary = {}
+statistic_dictionary = {}
+endQuarter = None
+
 
 # 统计开始
 def stastics():
-    load_dictionary.clear()
-    finish_dictionary.clear()
-    click_dictionary.clear()
+    global endQuarter
+    statistic_dictionary.clear()
     now = datetime.datetime.now()
     nextStartTime = timeQuarterformat(now)  # 获取当前时间，根据当前时间确定下次开始时间
     starttime = db.getStartTime()  # 本次统计开始的时间
     logger.info('本次开始统计时间:%s', starttime)
+    startQuarter = timeQuarterformat(starttime)
+    endQuarter = startQuarter + datetime.timedelta(minutes=15)
     filename = getFilename(starttime)  # 获取当前需要统计的日志文件
     if not os.path.exists(filename):  # 文件不存在
         logger.info('文件不存在:%s,统计的开始时间为%s', filename, starttime)
@@ -64,13 +65,11 @@ def stastics():
             nexttime = endtime + datetime.timedelta(days=1)
             nexttime = datetime.datetime(nexttime.year, nexttime.month, nexttime.day, 0, 0, 0)
             db.updateLastTime(str(nexttime))
-            stastics()# 读取下一天的日志
+            stastics()  # 读取下一天的日志
         else:
             nexttime = timeQuarterformat(nextStartTime)
             db.updateLastTime(str(nexttime))
 
-
-endQuarter = None
 
 # 解析每一行日志
 def handleLine(param, time):
@@ -98,14 +97,13 @@ def handleLine(param, time):
 
 # 统计加载
 def stasticsLoad(param, time):
-    #2017-11-22 11:19:25,874#INFO#http-8019-exec-5#load#129#143#201#jrtt##101.231.117.234#
+    # 2017-11-22 11:19:25,874#INFO#http-8019-exec-5#load#129#143#201#jrtt##101.231.117.234#
     collect_time = timeQuarterformat(time)
-    key = param[4] + param[5] + param[6] + collect_time.strftime('%Y-%m-%d %H:%M:%S') # key格式：gameid + id + type +统计时间段的开始时间
-    ads = None
-    if load_dictionary.has_key(key):
-        ads = load_dictionary.get(key)
+    key = param[4] + param[5] + param[6] + collect_time.strftime('%Y-%m-%d %H:%M:%S')  # key格式：gameid + id + type +统计时间段的开始时间
+    if statistic_dictionary.has_key(key):
+        ads = statistic_dictionary.get(key)
     else:
-        ads = ADStastics()
+        ads = ADStatistics()
         ads.id = param[5]
         ads.gameId = param[4]
         ads.type = param[6]
@@ -115,19 +113,18 @@ def stasticsLoad(param, time):
     ads.load += 1
     if ads.ipLoad.count(param[9]) == 0:
         ads.ipLoad.append(param[9])
-    load_dictionary[key] = ads # 新增或更新dict
+    statistic_dictionary[key] = ads  # 新增或更新dict
 
 
 # 统计加载完成
 def stasticsFinish(param, time):
-    #2017-11-22 11:19:25,874#INFO#http-8019-exec-5#load#129#143#201#jrtt##101.231.117.234#
+    # 2017-11-22 11:19:25,874#INFO#http-8019-exec-5#load#129#143#201#jrtt##101.231.117.234#
     collect_time = timeQuarterformat(time)
-    key = param[4] + param[5] + param[6] + collect_time.strftime('%Y-%m-%d %H:%M:%S') # key格式：gameid + id + type +统计时间段的开始时间
-    ads = None
-    if finish_dictionary.has_key(key):
-        ads = finish_dictionary.get(key)
+    key = param[4] + param[5] + param[6] + collect_time.strftime('%Y-%m-%d %H:%M:%S')  # key格式：gameid + id + type +统计时间段的开始时间
+    if statistic_dictionary.has_key(key):
+        ads = statistic_dictionary.get(key)
     else:
-        ads = ADStastics()
+        ads = ADStatistics()
         ads.id = param[5]
         ads.gameId = param[4]
         ads.type = param[6]
@@ -138,19 +135,18 @@ def stasticsFinish(param, time):
     ads.load_time += int(param[10])
     if ads.ipfinish.count(param[9]) == 0:
         ads.ipfinish.append(param[9])
-    finish_dictionary[key] = ads # 新增或更新dict
+    statistic_dictionary[key] = ads  # 新增或更新dict
 
 
 # 统计点击
 def stasticsClick(param, time):
-    #2017-11-22 11:19:25,874#INFO#http-8019-exec-5#load#129#143#201#jrtt##101.231.117.234#
+    # 2017-11-22 11:19:25,874#INFO#http-8019-exec-5#load#129#143#201#jrtt##101.231.117.234#
     collect_time = timeQuarterformat(time)
-    key = param[4] + param[5] + param[6] + collect_time.strftime('%Y-%m-%d %H:%M:%S') # key格式：gameid + id + type +统计时间段的开始时间
-    ads = None
-    if click_dictionary.has_key(key):
-        ads = click_dictionary.get(key)
+    key = param[4] + param[5] + param[6] + collect_time.strftime('%Y-%m-%d %H:%M:%S')  # key格式：gameid + id + type +统计时间段的开始时间
+    if statistic_dictionary.has_key(key):
+        ads = statistic_dictionary.get(key)
     else:
-        ads = ADStastics()
+        ads = ADStatistics()
         ads.id = param[5]
         ads.gameId = param[4]
         ads.type = param[6]
@@ -160,34 +156,25 @@ def stasticsClick(param, time):
     ads.click += 1
     if ads.ipclick.count(param[9]) == 0:
         ads.ipclick.append(param[9])
-    click_dictionary[key] = ads # 新增或更新dict
+    statistic_dictionary[key] = ads  # 新增或更新dict
+
 
 # 保存统计结果
 def savedicts():
     global endQuarter
-    logger.info("当前统计时间段为：%s" % endQuarter)
-    for key in load_dictionary:
-        db.saveStastics(load_dictionary[key])
-    for key in finish_dictionary:
-        db.saveStastics(finish_dictionary[key])
-    for key in click_dictionary:
-        db.saveStastics(click_dictionary[key])
-    load_dictionary.clear()
-    finish_dictionary.clear()
-    click_dictionary.clear()
+    logger.info("当前统计时间段为：%s,统计结果数量为：%s" % (endQuarter, len(statistic_dictionary)))
+    for key in statistic_dictionary:
+        db.saveStastics(statistic_dictionary[key])
+    statistic_dictionary.clear()
 
 
 # 获取所给时间前一刻钟的时间点
 def timeQuarterformat(time):
-    minu = 0
     minute = time.minute
-    if minute < 15:
-        minu = 0
-    elif minute < 30:
-        minu = 15
-    elif minute < 45:
-        minu = 30
-    else:
-        minu = 45
+    minu = minute / 15 * 15
     date = time.strftime('%Y-%m-%d %H:')
     return datetime.datetime.strptime(date + str(minu) + ":00", '%Y-%m-%d %H:%M:%S')
+
+
+if __name__ == '__main__':
+    print "请从start.py开始执行"
