@@ -5,7 +5,7 @@ Created on 2017年11月21日
 @author: zhaiyl
 '''
 
-import MySQLdb
+import pymysql
 import conf.conf as conf
 import ConfigParser
 
@@ -93,7 +93,7 @@ def getDbName(cf):
 
 # 获取数据库连接
 def getConn(cf):
-    conn = MySQLdb.connect(host=getHost(cf),
+    conn = pymysql.connect(host=getHost(cf),
                            port=int(getPort(cf)),
                            user=getUser(cf),
                            passwd=getPasswd(cf),
